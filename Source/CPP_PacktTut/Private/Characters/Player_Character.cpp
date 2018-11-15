@@ -67,6 +67,8 @@ APlayer_Character::APlayer_Character()
 
 	DamageAmount = 10.0f;
 
+	InteractionDistance = 250;
+
 	FireAnimation = nullptr;
 
 	TrailEffect = nullptr;
@@ -142,8 +144,14 @@ void APlayer_Character::SetupPlayerInputComponent(UInputComponent * PlayerInputC
 	//assertion check, causes the program to crash if not true
 	check(PlayerInputComponent);
 
+	//Interaction input
+	PlayerInputComponent->BindAction("Interact", IE_Pressed, this, &APlayer_Character::Interact);
+
 	// Shoot input
 	PlayerInputComponent->BindAction("Fire", IE_Pressed, this, &APlayer_Character::OnFire);
+
+	// Pause input
+	PlayerInputComponent->BindAction("PauseGame", IE_Pressed, this, &APlayer_Character::PauseGame);
 
 	//Movement input
 	PlayerInputComponent->BindAxis("MoveForward", this, &APlayer_Character::MoveForward);
@@ -409,6 +417,43 @@ void APlayer_Character::SpawnShootingParticles(FVector ParticleLocation)
 
 		//Scale the particle up so its easily visible
 		SpawnedParticle->SetWorldScale3D(FVector(0.25f));
+	}
+}
+
+void APlayer_Character::Interact()
+{
+	//Prepare our invisible ray's values
+	FHitResult Hit;
+	const FVector StartTrace = Camera->GetComponentLocation();
+	const FVector EndTrace = StartTrace + (Camera->GetForwardVector()*InteractionDistance);
+
+	//Collision to ignore
+	FCollisionQueryParams QueryParams;
+	QueryParams.AddIgnoredActor(GetOwner());
+	QueryParams.AddIgnoredActor(this);
+
+	//Fire an invisible ray
+	GetWorld()->LineTraceSingleByChannel(Hit, StartTrace, EndTrace, ECollisionChannel::ECC_Visibility, QueryParams);
+
+	//Check if we hit anything
+	if (Hit.bBlockingHit)
+	{
+		AActor* HitActor = Hit.GetActor();
+		//check if it has the interface implemented
+		if (HitActor->GetClass()->ImplementsInterface(UInteraction_Interface::StaticClass()))
+		{
+			//cast for c++ interface
+			if (IInteraction_Interface* Interface = Cast<IInteraction_Interface>(HitActor))
+			{
+				//call C++ layer
+				Interface->Execute_OnInteract(HitActor, this);
+			}
+			else
+			{
+				//Call BP Layer
+				IInteraction_Interface::Execute_OnInteract(HitActor, this);
+			}
+		}
 	}
 }
 

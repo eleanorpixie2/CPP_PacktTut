@@ -18,5 +18,12 @@ public:
 
 	UFUNCTION(BlueprintCallable, Category = "Game")
 		void RespawnPlayer(AController* NewPlayer);
+
+	UFUNCTION(BlueprintCallable, Category = "Game")
+		void GameOver(int enemies);
+
+	UPROPERTY(EditAnywhere, BlueprintReadWrite, Category = "Game|GameOver")
+		FName LevelToGoTo;
+
 	
 };

@@ -55,7 +55,7 @@ APlayer_Character::APlayer_Character()
 
 	bCanShoot = true;
 	bUnlimitedAmmo = false;
-	MaxAmmo = 10;
+	MaxAmmo = 25;
 	CurrentAmmo = MaxAmmo;
 
 	BaseTurnRate = 100.0f;
